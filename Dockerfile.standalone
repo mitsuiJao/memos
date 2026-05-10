@@ -1,0 +1,63 @@
+# Stage 1: Build frontend
+FROM node:24-alpine AS frontend-builder
+WORKDIR /build/web
+
+# Install pnpm matching the version in packageManager field
+RUN corepack enable && corepack prepare pnpm@11.0.1 --activate
+
+# Install dependencies (cached layer)
+COPY web/package.json web/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+# Copy source (includes pre-generated proto TypeScript types)
+COPY web/ ./
+
+# pnpm release outputs to ../server/router/frontend/dist => /build/server/router/frontend/dist
+RUN pnpm release
+
+# Stage 2: Build Go backend
+FROM golang:1.26.2-alpine AS backend-builder
+WORKDIR /backend-build
+
+RUN apk add --no-cache git ca-certificates
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+# Overlay the freshly built frontend dist
+COPY --from=frontend-builder /build/server/router/frontend/dist ./server/router/frontend/dist
+
+ARG TARGETOS TARGETARCH VERSION=dev COMMIT=unknown
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-amd64} \
+    go build \
+      -trimpath \
+      -ldflags="-s -w -X github.com/usememos/memos/internal/version.Version=${VERSION} -X github.com/usememos/memos/internal/version.Commit=${COMMIT} -extldflags '-static'" \
+      -tags netgo,osusergo \
+      -o memos \
+      ./cmd/memos
+
+# Stage 3: Runtime image
+FROM alpine:3.21
+
+RUN apk add --no-cache tzdata ca-certificates su-exec && \
+    addgroup -g 10001 -S nonroot && \
+    adduser -u 10001 -S -G nonroot -h /var/opt/memos nonroot && \
+    mkdir -p /var/opt/memos /usr/local/memos && \
+    chown -R nonroot:nonroot /var/opt/memos
+
+COPY --from=backend-builder /backend-build/memos /usr/local/memos/memos
+COPY --from=backend-builder /backend-build/scripts/entrypoint.sh /usr/local/memos/entrypoint.sh
+RUN chmod +x /usr/local/memos/entrypoint.sh
+
+USER root
+WORKDIR /var/opt/memos
+VOLUME /var/opt/memos
+
+ENV TZ="UTC" \
+    MEMOS_PORT="5230"
+
+EXPOSE 5230
+
+ENTRYPOINT ["/usr/local/memos/entrypoint.sh", "/usr/local/memos/memos"]

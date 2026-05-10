@@ -1,0 +1,15 @@
+services:
+  memos:
+    # Use image built by: ./scripts/build-local.sh
+    # Or with buildx:     docker compose build
+    image: memos-local
+    build:
+      context: .
+      dockerfile: Dockerfile.standalone
+      network: host
+    container_name: memos
+    ports:
+      - "5230:5230"
+    volumes:
+      - /var/opt/memos:/var/opt/memos
+    restart: unless-stopped
