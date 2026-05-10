@@ -1,15 +1,9 @@
 services:
   memos:
-    # Use image built by: ./scripts/build-local.sh
-    # Or with buildx:     docker compose build
-    image: memos-local
-    build:
-      context: .
-      dockerfile: Dockerfile.standalone
-      network: host
+    image: ghcr.io/mitsuijao/memos:latest
     container_name: memos
-    ports:
-      - "5230:5230"
     volumes:
       - /var/opt/memos:/var/opt/memos
+    ports:
+      - "5230:5230"
     restart: unless-stopped
