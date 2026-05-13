@@ -5,6 +5,7 @@ import (
 	stderrors "errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 	"time"
 
@@ -181,6 +182,11 @@ func (s *APIV1Service) CreateMemo(ctx context.Context, request *v1pb.CreateMemoR
 
 	if !isMentionNotificationSuppressed(ctx) {
 		s.dispatchMemoMentionNotificationsBestEffort(ctx, memo, nil, "")
+	}
+
+	// Process #remind command if present (runs async, never blocks the API response).
+	if slices.Contains(memo.Payload.GetTags(), "remind") {
+		go s.processRemindCommand(context.Background(), user, memo)
 	}
 
 	return memoMessage, nil
@@ -639,6 +645,9 @@ func (s *APIV1Service) DeleteMemo(ctx context.Context, request *v1pb.DeleteMemoR
 	if err = s.Store.DeleteMemo(ctx, &store.DeleteMemo{ID: memo.ID}); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to delete memo")
 	}
+
+	// Soft-delete any pending reminders associated with this memo.
+	go s.cleanupMemoReminds(context.Background(), memoUID)
 
 	// Broadcast live refresh event.
 	s.SSEHub.Broadcast(&SSEEvent{

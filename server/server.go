@@ -22,6 +22,7 @@ import (
 	"github.com/usememos/memos/server/router/frontend"
 	mcprouter "github.com/usememos/memos/server/router/mcp"
 	"github.com/usememos/memos/server/router/rss"
+	remindrunner "github.com/usememos/memos/server/runner/remind"
 	"github.com/usememos/memos/server/runner/s3presign"
 	"github.com/usememos/memos/store"
 )
@@ -165,6 +166,17 @@ func (s *Server) startBackgroundRunners(ctx context.Context) {
 		defer s.backgroundRunnerWG.Done()
 		s3presignRunner.Run(s3Context)
 		slog.Info("s3presign runner stopped")
+	}()
+
+	// Create and start remind runner.
+	remindCtx, remindCancel := context.WithCancel(ctx)
+	s.backgroundRunnerCancels = append(s.backgroundRunnerCancels, remindCancel)
+	remindRunner := remindrunner.NewRunner(s.Store)
+	s.backgroundRunnerWG.Add(1)
+	go func() {
+		defer s.backgroundRunnerWG.Done()
+		remindRunner.Run(remindCtx)
+		slog.Info("remind runner stopped")
 	}()
 
 	slog.Info("background runners started")

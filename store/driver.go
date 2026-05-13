@@ -81,4 +81,15 @@ type Driver interface {
 	CreateUserIdentity(ctx context.Context, create *UserIdentity) (*UserIdentity, error)
 	ListUserIdentities(ctx context.Context, find *FindUserIdentity) ([]*UserIdentity, error)
 	DeleteUserIdentities(ctx context.Context, delete *DeleteUserIdentity) error
+
+	// Remind model related methods.
+	CreateRemind(ctx context.Context, create *Remind) (*Remind, error)
+	ListReminds(ctx context.Context, find *FindRemind) ([]*Remind, error)
+	UpdateRemind(ctx context.Context, update *UpdateRemind) error
+	DeleteRemind(ctx context.Context, delete *DeleteRemind) error
+
+	// RemindEphemeralMemo related methods.
+	CreateRemindEphemeralMemo(ctx context.Context, create *RemindEphemeralMemo) error
+	ListRemindEphemeralMemos(ctx context.Context, find *FindRemindEphemeralMemo) ([]*RemindEphemeralMemo, error)
+	DeleteRemindEphemeralMemo(ctx context.Context, memoUID string) error
 }
