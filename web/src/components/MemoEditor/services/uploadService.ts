@@ -2,6 +2,7 @@ import { create } from "@bufbuild/protobuf";
 import { attachmentServiceClient } from "@/connect";
 import type { Attachment } from "@/types/proto/api/v1/attachment_service_pb";
 import { AttachmentSchema, MotionMediaSchema } from "@/types/proto/api/v1/attachment_service_pb";
+import { COMPRESSIBLE_IMAGE_TYPES, compressImageIfNeeded, readFileInChunks } from "@/utils/fileUtils";
 import type { LocalFile } from "../types/attachment";
 
 export const uploadService = {
@@ -12,12 +13,15 @@ export const uploadService = {
 
     for (const localFile of localFiles) {
       const { file, motionMedia } = localFile;
-      const buffer = new Uint8Array(await file.arrayBuffer());
+
+      const uploadFile = COMPRESSIBLE_IMAGE_TYPES.has(file.type) ? await compressImageIfNeeded(file) : file;
+      const buffer = await readFileInChunks(uploadFile);
+
       const attachment = await attachmentServiceClient.createAttachment({
         attachment: create(AttachmentSchema, {
-          filename: file.name,
-          size: BigInt(file.size),
-          type: file.type,
+          filename: uploadFile.name,
+          size: BigInt(uploadFile.size),
+          type: uploadFile.type,
           content: buffer,
           motionMedia: motionMedia ? create(MotionMediaSchema, motionMedia) : undefined,
         }),
