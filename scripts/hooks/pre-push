@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+# Git pre-push hook: runs lint/test before every push.
+# Installed via scripts/setup-hooks.sh
+set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+echo "[pre-push] Running checks before push..."
+"$REPO_ROOT/scripts/check.sh" all
+
+echo "[pre-push] All checks passed. Proceeding with push."

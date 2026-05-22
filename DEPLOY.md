@@ -51,3 +51,24 @@ docker push ghcr.io/mitsuijao/memos:latest
 # 本番サーバーで
 docker compose pull && docker compose up -d
 ```
+
+## ローカルでの事前チェック
+
+push 前に CI と同じ lint/test を手元で確認できる。
+
+```bash
+# 全チェック（frontend + backend）
+./scripts/check.sh
+
+# 個別実行
+./scripts/check.sh frontend
+./scripts/check.sh backend
+```
+
+`git push` のたびに自動でチェックを走らせたい場合は pre-push hook をセットアップする（clone 後に一度だけ実行）：
+
+```bash
+./scripts/setup-hooks.sh
+```
+
+以降は `git push` のたびに `check.sh` が自動で走り、失敗すると push がブロックされる。スキップしたい場合は `git push --no-verify`。
