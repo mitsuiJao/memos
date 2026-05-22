@@ -2,14 +2,19 @@
 
 ## 概要
 
-本番環境ではビルド済みイメージを GHCR (GitHub Container Registry) から pull して使う。
-ビルドはリソースのあるマシン（開発機）で行い、本番サーバーはビルドしない。
+通常のビルドは **GitHub Actions (`ci.yml`)** が `main` への push をトリガーに自動実行し、`ghcr.io/mitsuijao/memos:latest` へ push する。
+このドキュメントは CI/CD が使えない場合や、手動でイメージを作成・確認したい場合のリファレンス。
 
 ```
-開発機  → ビルド → ghcr.io/mitsuijao/memos:latest
-本番機             ↓ docker compose pull
-                   docker compose up -d
+[通常] git push origin main
+         → ci.yml (lint/test → build → push)
+         → ghcr.io/mitsuijao/memos:latest
+
+[手動] 開発機: ./scripts/build-local.sh → docker tag → docker push
+         → ghcr.io/mitsuijao/memos:latest
 ```
+
+本番機は常に `docker compose pull && docker compose up -d` で更新する。
 
 ---
 
