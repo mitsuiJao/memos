@@ -1,5 +1,7 @@
 # デプロイ・アップデート手順
 
+> Docker ビルドの詳細（Dockerfile の構造・GHCR へのログインと push 手順など）は [docs/docker-build.md](docs/docker-build.md) を参照。
+
 ## 初回セットアップ（本番サーバー）
 
 ```bash
