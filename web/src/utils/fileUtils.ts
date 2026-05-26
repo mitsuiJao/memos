@@ -37,6 +37,10 @@ export async function compressImageIfNeeded(file: File): Promise<File> {
       canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("canvas.toBlob returned null"))), "image/jpeg", JPEG_QUALITY);
     });
 
+    if (blob.size >= file.size) {
+      return file;
+    }
+
     const stem = file.name.replace(/\.[^.]+$/, "");
     return new File([blob], `${stem}.jpg`, { type: "image/jpeg" });
   } catch {
