@@ -15,6 +15,7 @@ export const uploadService = {
       const { file, motionMedia } = localFile;
 
       const uploadFile = COMPRESSIBLE_IMAGE_TYPES.has(file.type) ? await compressImageIfNeeded(file) : file;
+
       const buffer = await readFileInChunks(uploadFile);
 
       const attachment = await attachmentServiceClient.createAttachment({
