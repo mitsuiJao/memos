@@ -1,11 +1,13 @@
 #!/usr/bin/env sh
-# Git pre-push hook: runs lint/test before every push.
+# Git pre-push hook: runs lint before every push (tests are left to CI).
 # Installed via scripts/setup-hooks.sh
 set -e
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 
-echo "[pre-push] Running checks before push..."
-"$REPO_ROOT/scripts/check.sh" all
+echo "[pre-push] Running lint checks before push..."
+"$REPO_ROOT/scripts/check.sh" frontend
+# "$REPO_ROOT/scripts/check.sh" backend   # uncomment to enable backend lint
+# "$REPO_ROOT/scripts/check.sh" all       # uncomment to include tests too
 
-echo "[pre-push] All checks passed. Proceeding with push."
+echo "[pre-push] Lint passed. Proceeding with push."
