@@ -5,6 +5,9 @@ import { AttachmentSchema, MotionMediaSchema } from "@/types/proto/api/v1/attach
 import { COMPRESSIBLE_IMAGE_TYPES, compressImageIfNeeded, readFileInChunks } from "@/utils/fileUtils";
 import type { LocalFile } from "../types/attachment";
 
+// Must match MaxUploadBufferSizeBytes on the server (attachment_service.go).
+const MAX_UPLOAD_SIZE_BYTES = 32 * 1024 * 1024;
+
 export const uploadService = {
   async uploadFiles(localFiles: LocalFile[]): Promise<Attachment[]> {
     if (localFiles.length === 0) return [];
@@ -15,6 +18,11 @@ export const uploadService = {
       const { file, motionMedia } = localFile;
 
       const uploadFile = COMPRESSIBLE_IMAGE_TYPES.has(file.type) ? await compressImageIfNeeded(file) : file;
+
+      if (uploadFile.size > MAX_UPLOAD_SIZE_BYTES) {
+        throw new Error(`File "${file.name}" exceeds the maximum upload size of 32 MB.`);
+      }
+
       const buffer = await readFileInChunks(uploadFile);
 
       const attachment = await attachmentServiceClient.createAttachment({
